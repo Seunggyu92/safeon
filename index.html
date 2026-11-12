@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7f5">
+  <meta name="description" content="우리 동네 재난문자 이력을 살펴보고 주변 민방위 대피시설과 응급의료기관을 미리 확인합니다.">
+  <title>SafeOn · 재난안전 지도</title>
+  <link rel="stylesheet" href="assets/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="assets/leaflet.js"></script>
+  <script defer src="assets/catalog.js"></script>
+  <script defer src="assets/boundaries.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="SafeOn 첫 화면">
+      <span class="brand-icon" data-icon="shield"></span>
+      <span>SafeOn<span class="brand-description">재난안전 지도</span></span>
+    </a>
+    <nav class="navigation" aria-label="주 메뉴">
+      <button type="button" data-tab="facilities" class="nav-item" aria-pressed="true"><span data-icon="map"></span>시설 찾기</button>
+      <button type="button" data-tab="alerts" class="nav-item" aria-pressed="false"><span data-icon="bell"></span>재난문자 이력</button>
+    </nav>
+    <details class="data-details">
+      <summary><span class="status-dot"></span>데이터 갱신 <span class="chevron" data-icon="down"></span></summary>
+      <dl id="data-updates"></dl>
+    </details>
+  </header>
+  <main class="workspace" id="workspace" data-view="facilities" data-detail-open="false">
+    <aside class="browse" aria-label="검색 및 결과">
+      <div class="browse-head">
+        <h1 id="browse-title">주변 안전시설</h1>
+        <label for="region" class="sr-only">시·군·구 선택</label>
+        <div class="control region-control"><span data-icon="pin"></span><select id="region"></select><span data-icon="down"></span></div>
+        <div id="facility-controls">
+          <p class="location-hint" id="location-hint" role="status" hidden></p>
+          <label class="control search" for="query"><span data-icon="search"></span><input id="query" type="search" placeholder="시설명이나 주소 검색" autocomplete="off"></label>
+          <div class="segments" id="facility-filters" aria-label="시설 유형">
+            <button type="button" data-kind="all" aria-pressed="true">전체</button>
+            <button type="button" data-kind="shelter" aria-pressed="false"><span class="category-dot shelter"></span>대피시설</button>
+            <button type="button" data-kind="hospital" aria-pressed="false"><span class="category-dot hospital"></span>응급의료기관</button>
+          </div>
+          <label class="check-control"><input type="checkbox" id="include-inactive">사용중 외 대피시설 포함</label>
+        </div>
+        <div id="alert-controls" hidden>
+          <label class="control search" for="alert-query"><span data-icon="search"></span><span class="sr-only">문자 내용 검색</span><input id="alert-query" type="search" placeholder="문자 내용 검색" autocomplete="off"></label>
+          <label class="control" for="alert-type"><span class="sr-only">재난 유형</span><select id="alert-type"><option value="">모든 재난 유형</option></select><span data-icon="down"></span></label>
+          <label class="control" for="alert-scope">
+            <span class="sr-only">문자 수신 범위</span>
+            <select id="alert-scope"><option value="">모든 수신 범위</option><option value="direct">시·군·구 직접 지정</option><option value="wide">상위 지역·전국 대상</option></select>
+            <span data-icon="down"></span>
+          </label>
+          <div class="date-range">
+            <label for="alert-from"><span>시작일</span><input id="alert-from" type="date"></label>
+            <label for="alert-to"><span>종료일</span><input id="alert-to" type="date"></label>
+          </div>
+        </div>
+      </div>
+      <div class="results-head" id="results-head">
+        <p id="result-count" aria-live="polite"></p>
+        <label for="sort" class="sr-only">시설 목록 정렬</label>
+        <select id="sort"><option value="distance">거리순</option><option value="name">이름순</option></select>
+      </div>
+      <div class="results" id="results"></div>
+    </aside>
+    <section class="map-panel" id="map-panel" aria-label="통합 시설 지도">
+      <div id="map" aria-label="대피시설과 응급의료기관 위치"></div>
+      <div class="map-caption"><span class="category-dot"></span><span id="map-context">주변 안전시설</span></div>
+      <div class="map-actions">
+        <button type="button" class="map-button" id="locate" title="내 위치"><span data-icon="locate"></span><span>내 위치</span></button>
+        <button type="button" class="map-button map-reset" id="demo-location" title="청주 시연 위치"><span data-icon="reset"></span><span>시연 위치</span></button>
+      </div>
+      <div class="map-legend" aria-label="지도 범례">
+        <span><i class="category-dot shelter"></i>대피시설</span><span><i class="category-dot hospital"></i>응급의료기관</span>
+      </div>
+      <div class="map-background-label" id="map-background-label" role="status" hidden></div>
+      <div class="map-status" id="map-status" role="status" hidden></div>
+    </section>
+    <section class="detail" id="detail" aria-label="선택 항목 상세">
+      <div class="segments archive-switch" id="archive-switch" role="group" aria-label="재난문자 보기" hidden>
+        <button type="button" data-archive-view="message" aria-controls="detail-content" aria-pressed="true">문자 상세</button>
+        <button type="button" data-archive-view="map" aria-controls="archive-map-view" aria-pressed="false">지역별 지도</button>
+      </div>
+      <div id="detail-content"></div>
+      <section id="archive-map-view" aria-labelledby="archive-map-title" hidden>
+        <h2 id="archive-map-title">지역별 재난문자 발송 건수</h2>
+        <p class="detail-subtitle" id="archive-map-context"></p>
+        <div class="archive-map-frame" id="archive-map-frame">
+          <div id="archive-map" aria-label="시·군·구별 재난문자 발송 건수 지도" aria-describedby="archive-map-note"></div>
+          <button type="button" class="map-button archive-map-reset" id="archive-map-reset">전국 보기</button>
+        </div>
+        <ul class="archive-map-legend" id="archive-map-legend" aria-label="직접 지정 문자 발송 건수 범례"></ul>
+        <p class="archive-map-selection" id="archive-map-selection" role="status"></p>
+        <p class="detail-note" id="archive-map-note"></p>
+      </section>
+    </section>
+    <section class="archive-stats" id="archive-stats" aria-label="재난문자 발송 통계" hidden></section>
+  </main>
+  <noscript>SafeOn을 사용하려면 브라우저에서 JavaScript를 켜주세요.</noscript>
+</body>
+</html>
